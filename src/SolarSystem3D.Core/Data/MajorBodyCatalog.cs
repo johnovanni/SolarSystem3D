@@ -1,5 +1,5 @@
 using SolarSystem3D.Core.Bodies;
-using SolarSystem3D.Core.Orbits;
+using AstroCore.Orbits;
 
 namespace SolarSystem3D.Core.Data;
 

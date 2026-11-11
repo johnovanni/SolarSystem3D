@@ -6,10 +6,10 @@ using CommunityToolkit.Mvvm.Input;
 using SolarSystem3D.App.Rendering;
 using SolarSystem3D.App.Simulation;
 using SolarSystem3D.Core;
-using SolarSystem3D.Core.Astronomy;
+using AstroCore.Astronomy;
 using SolarSystem3D.Core.Bodies;
 using SolarSystem3D.Core.Data;
-using SolarSystem3D.Core.Orbits;
+using AstroCore.Orbits;
 
 namespace SolarSystem3D.App.ViewModels;
 

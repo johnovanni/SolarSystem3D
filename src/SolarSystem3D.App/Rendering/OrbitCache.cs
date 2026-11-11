@@ -1,4 +1,5 @@
-using SolarSystem3D.Core.Astronomy;
+using AstroCore.Astronomy;
+using AstroCore.Orbits;
 using SolarSystem3D.Core.Bodies;
 using SolarSystem3D.Core.Orbits;
 

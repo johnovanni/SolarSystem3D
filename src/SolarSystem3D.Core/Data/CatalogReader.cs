@@ -1,5 +1,5 @@
 using System.Globalization;
-using SolarSystem3D.Core.Astronomy;
+using AstroCore.Astronomy;
 using SolarSystem3D.Core.Bodies;
 using SolarSystem3D.Core.Orbits;
 

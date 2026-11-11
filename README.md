@@ -25,13 +25,28 @@ the Sun, all eight planets, the dwarf planets, all 461 known planetary moons, th
 
 ## Build and run
 
-You need the .NET 8 SDK or later on Windows.
+You need the .NET 10 SDK or later on Windows.
+
+The shared astronomy code comes from [AstroCore](https://github.com/johnovanni/AstroCore), a git submodule
+in `external/AstroCore`, so clone with `--recursive`:
+
+```bash
+git clone --recursive https://github.com/johnovanni/SolarSystem3D.git
+```
+
+If you already cloned without it, fetch the submodule with:
+
+```bash
+git submodule update --init
+```
+
+Then build and run:
 
 ```bash
 dotnet run --project src/SolarSystem3D.App -c Release
 ```
 
-Or open `SolarSystem3D.sln` in Visual Studio 2022 and run `SolarSystem3D.App`.
+Or open `SolarSystem3D.sln` in Visual Studio 2026 and run `SolarSystem3D.App`.
 To run the accuracy tests, which compare positions with JPL Horizons:
 
 ```bash
@@ -62,9 +77,10 @@ and the status bar warns you when you go there.
 ## Project layout
 
 ```
-src/SolarSystem3D.Core     Astronomy library (no UI)
-  Astronomy/               Vector3d, Matrix3d, AstroTime (Julian dates, ΔT), Frames, Conic (Kepler solvers)
-  Orbits/                  IOrbitModel → PlanetOrbit, LunarOrbit, EarthOrbit, KeplerOrbit
+external/AstroCore         Shared astronomy core (git submodule): Vector3d, Matrix3d, AstroTime (Julian dates, ΔT),
+                           Frames, Conic (Kepler solvers), IOrbitModel → PlanetOrbit, LunarOrbit, EarthOrbit
+src/SolarSystem3D.Core     Solar-system model (no UI), built on AstroCore
+  Orbits/                  KeplerOrbit (two-body orbits for moons, asteroids and comets)
   Bodies/                  CelestialBody → Star, Planet, DwarfPlanet, NaturalSatellite, Asteroid, Comet
   Data/                    Catalog store/reader/downloader, built-in planet data, SolarSystemFactory
   Data/Embedded/           Offline catalog snapshot (moons, 5,500 asteroids, 4,088 comets)

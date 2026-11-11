@@ -3,7 +3,7 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using HelixToolkit.Wpf;
 using SolarSystem3D.Core;
-using SolarSystem3D.Core.Astronomy;
+using AstroCore.Astronomy;
 using SolarSystem3D.Core.Bodies;
 using static SolarSystem3D.App.Rendering.Palette;
 

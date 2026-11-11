@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using SolarSystem3D.Core.Astronomy;
+using AstroCore.Astronomy;
 
 namespace SolarSystem3D.App.Simulation;
 
