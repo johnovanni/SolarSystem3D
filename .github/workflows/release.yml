@@ -1,0 +1,116 @@
+name: Release
+
+# Builds a self-contained Windows x64 zip.
+# Pull requests: the zip is uploaded as a workflow artifact so the build can be checked (unsigned).
+# Version tags (v1.0.0): the zip and its SHA-256 checksum are attached to a GitHub Release,
+# which qapow.com can link to as releases/latest/download/SolarSystem3D-win-x64.zip.
+#
+# Tag and manual runs sign the app's .exe and its own DLLs with Azure Artifact Signing
+# (account JohnApolloni, profile JohnApolloniPublic), the same setup VoiceCoach uses.
+# They run in the "release" environment and sign in to Azure with GitHub's OIDC token, which needs
+# repository variables AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID, and an Entra app
+# with a federated credential for the "release" environment that holds the "Artifact Signing
+# Certificate Profile Signer" role on the account. With GitHub's immutable OIDC subject, the
+# credential's subject is repo:johnovanni@11181099/SolarSystem3D@1453492525:environment:release.
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths: ['.github/workflows/release.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write # OIDC sign-in to Azure for code signing
+
+env:
+  PROJECT: src/SolarSystem3D.App/SolarSystem3D.App.csproj
+  ZIP: SolarSystem3D-win-x64.zip
+  # Pull request builds skip signing, so they never need Azure access.
+  SIGN: ${{ github.event_name != 'pull_request' }}
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    # The Azure federated credential trusts this environment, so only runs that use it can sign.
+    environment: ${{ github.event_name != 'pull_request' && 'release' || '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish
+        run: dotnet publish $env:PROJECT -c Release -r win-x64 --self-contained true -o publish
+
+      - name: Sign in to Azure
+        if: env.SIGN == 'true'
+        uses: azure/login@v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Signs only the files we build; third-party DLLs keep their publishers' signatures.
+      - name: Sign
+        if: env.SIGN == 'true'
+        uses: Azure/artifact-signing-action@v2.0.0
+        with:
+          endpoint: https://cus.codesigning.azure.net/
+          signing-account-name: JohnApolloni
+          certificate-profile-name: JohnApolloniPublic
+          files: |
+            ${{ github.workspace }}\publish\SolarSystem3D.App.exe
+            ${{ github.workspace }}\publish\SolarSystem3D.App.dll
+            ${{ github.workspace }}\publish\SolarSystem3D.Core.dll
+            ${{ github.workspace }}\publish\AstroCore.dll
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Verify signatures
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: |
+          $bad = 'SolarSystem3D.App.exe', 'SolarSystem3D.App.dll', 'SolarSystem3D.Core.dll', 'AstroCore.dll' |
+            ForEach-Object { Get-AuthenticodeSignature "publish\$_" } |
+            Where-Object Status -ne 'Valid'
+          if ($bad) { $bad | Format-Table Path, Status, StatusMessage; throw 'Signature check failed.' }
+          (Get-AuthenticodeSignature publish\SolarSystem3D.App.exe).SignerCertificate.Subject
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath $env:ZIP
+          $hash = (Get-FileHash $env:ZIP -Algorithm SHA256).Hash.ToLower()
+          "$hash  $env:ZIP" | Out-File "$env:ZIP.sha256" -Encoding ascii -NoNewline
+          Get-Item $env:ZIP | Select-Object Name, Length
+
+      - name: Upload build
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SolarSystem3D-win-x64
+          path: |
+            ${{ env.ZIP }}
+            ${{ env.ZIP }}.sha256
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $env:ZIP "$env:ZIP.sha256" --clobber
+          } else {
+            gh release create $tag $env:ZIP "$env:ZIP.sha256" --title "$tag" --generate-notes
+          }
