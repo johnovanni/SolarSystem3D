@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:h="clr-namespace:HelixToolkit.Wpf;assembly=HelixToolkit.Wpf"
         xmlns:vm="clr-namespace:SolarSystem3D.App.ViewModels"
-        Title="Solar System 3D" Width="1500" Height="920" MinWidth="1000" MinHeight="640"
+        Title="Solar System 3D" Icon="/SolarSystem3D.App;component/Assets/SolarSystem3D.ico" Width="1500" Height="920" MinWidth="1000" MinHeight="640"
         Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}" WindowStartupLocation="CenterScreen"
         PreviewKeyDown="OnPreviewKeyDown">
     <Window.Resources>
